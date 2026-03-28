@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+.env.local
+
+# Database
+*.sqlite3
+*.db
+
+# Logs
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Testing / coverage
+htmlcov/
+.tox/
+.coverage*
+.pytest_cache/
+*.cover
+
+# Django (keep migrations, ignore compiled files)
+# Migrations are important, only ignore __pycache__ inside them
+*/migrations/__pycache__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Docker
+*.tmp
+.dockerignore
+
+# Project specific
+settings_local.py
+
+# Static and media files (if collected)
+staticfiles/
+media/
+
+# Misc
+*.pyc
+*.pyo
+*.pyd

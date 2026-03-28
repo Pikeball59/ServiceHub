@@ -1,0 +1,11 @@
+<h2>Ваш заказ №{{ order_id }} подтверждён</h2>
+<p>Детали заказа:</p>
+<ul>
+  {% for item in items %}
+    <li>{{ item.name }} ({{ item.model }}) – {{ item.quantity }} шт. x {{ item.price }} руб. = {{ item.total }} руб.</li>
+  {% endfor %}
+</ul>
+<p><strong>Итого: {{ total_sum }} руб.</strong></p>
+<p>Адрес доставки: {{ contact.city }}, {{ contact.street }}, {{ contact.house }}</p>
+
+
