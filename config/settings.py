@@ -12,6 +12,7 @@ DEBUG = os.getenv('DEBUG', '0') == '1'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
 INSTALLED_APPS = [
+    'baton',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -86,6 +87,7 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 AUTH_USER_MODEL = 'backend.User'
 
@@ -129,6 +131,14 @@ SPECTACULAR_SETTINGS = {
     'SWAGGER_UI_DIST': 'SIDECAR',
     'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
     'REDOC_DIST': 'SIDECAR',
+}
+
+# Настройки django-baton
+BATON_THEME = 'default'
+BATON = {
+    'SITE_HEADER': 'ServiceHub Admin',
+    'SITE_TITLE': 'ServiceHub',
+    'INDEX_TITLE': 'Панель управления',
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

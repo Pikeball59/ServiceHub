@@ -23,3 +23,5 @@ faker==19.0.0
 responses==0.23.3
 
 drf-spectacular[sidecar]~=0.27.0
+
+django-baton~=2.2.0
