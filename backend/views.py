@@ -372,7 +372,7 @@ class PartnerOrders(APIView):
 
 class ContactView(APIView):
     """
-       A class for managing contact information.
+       Класс для управления контактной информацией.
     """
 
     # получаю мои контакты
@@ -488,16 +488,18 @@ class OrderView(APIView):
 
                 try:
                     is_updated = Order.objects.filter(
-                        user_id=request.user.id, id=request.data['id']).update(
-                        contact_id=contact_id,
-                        state='new')
+                        user_id=request.user.id,
+                        id=request.data['id'],
+                        state='basket'
+                    ).update(contact_id=contact_id, state='new')
                 except IntegrityError as error:
                     logger.error(f"Order confirmation error: {error}")
                     return JsonResponse({'Status': False, 'Errors': 'Неправильно указаны аргументы'})
                 else:
-                    if is_updated:
-                        new_order.send(sender=self.__class__, user_id=request.user.id, order_id=request.data['id'])
-                        return JsonResponse({'Status': True})
+                    if not is_updated:
+                        return JsonResponse({'Status': False, 'Errors': 'Корзина не найдена или уже оформлена'})
+                    new_order.send(sender=self.__class__, user_id=request.user.id, order_id=request.data['id'])
+                    return JsonResponse({'Status': True})
 
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
