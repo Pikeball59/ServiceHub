@@ -12,6 +12,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.throttling import UserRateThrottle
 
 import json
 
@@ -25,11 +26,14 @@ from backend.tasks import do_import_task
 
 logger = logging.getLogger(__name__)
 
+# Добавлю кастомный throttle
+class BurstRateThrottle(UserRateThrottle):
+    rate = '10/min'
+
 class RegisterAccount(APIView):
     """
     Для регистрации покупателей
     """
-
     # Регистрация методом POST
     def post(self, request, *args, **kwargs):
         if {'first_name', 'last_name', 'email', 'password', 'company', 'position'}.issubset(request.data):
@@ -45,7 +49,6 @@ class RegisterAccount(APIView):
                 return JsonResponse({'Status': False, 'Errors': {'password': error_array}})
             else:
                 # проверяет данные для уникальности имени пользователя
-
                 user_serializer = UserSerializer(data=request.data)
                 if user_serializer.is_valid():
                     # сохраняем пользователя
@@ -62,7 +65,6 @@ class ConfirmAccount(APIView):
     """
     Класс для подтверждения почтового адреса
     """
-
     # Регистрация методом POST
     def post(self, request, *args, **kwargs):
 
@@ -84,7 +86,6 @@ class AccountDetails(APIView):
     """
     Класс для управления данными учётной записи пользователя
     """
-
     # получает данные
     def get(self, request: Request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -111,7 +112,6 @@ class AccountDetails(APIView):
                 return JsonResponse({'Status': False, 'Errors': {'password': error_array}})
             else:
                 request.user.set_password(request.data['password'])
-
         # проверяет остальные данные
         user_serializer = UserSerializer(request.user, data=request.data, partial=True)
         if user_serializer.is_valid():
@@ -124,7 +124,6 @@ class LoginAccount(APIView):
     """
     Класс для авторизации пользователей
     """
-
     # Авторизация методом POST
     def post(self, request, *args, **kwargs):
         if {'email', 'password'}.issubset(request.data):
@@ -158,6 +157,7 @@ class ProductInfoView(APIView):
     """
         Класс для поиска товаров
     """
+    throttle_classes = [BurstRateThrottle]   # <-- добавлено
 
     @extend_schema(
         parameters=[
@@ -200,13 +200,11 @@ class ProductDetailView(RetrieveAPIView):
         'shop', 'product__category'
     ).prefetch_related('product_parameters__parameter')
     serializer_class = ProductInfoSerializer
-# <-- END ADDED
 
 class BasketView(APIView):
     """
     Класс для управления корзиной пользователя
     """
-
     # получает корзину
     @extend_schema(security=[{'tokenAuth': []}], description='Получить содержимое корзины')
     def get(self, request, *args, **kwargs):
@@ -307,7 +305,6 @@ class PartnerUpdate(APIView):
     """
     Класс для обновления информации магазина (прайс-листа)
     """
-
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
@@ -365,7 +362,6 @@ class PartnerOrders(APIView):
     """
     Класс для получения заказов поставщиками
     """
-
     def get(self, request, *args, **kwargs):
 
         if not request.user.is_authenticated:
@@ -387,7 +383,6 @@ class ContactView(APIView):
     """
        Класс для управления контактной информацией.
     """
-
     # получаю мои контакты
     def get(self, request, *args, **kwargs):
 

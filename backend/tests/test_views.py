@@ -557,3 +557,14 @@ class TestAccountDetails:
         assert response.status_code == status.HTTP_200_OK
         assert response.json()['Status'] is True
 
+# Добавлю тест для throttling
+@pytest.mark.django_db
+class TestThrottling:
+    def test_anon_throttle(self, api_client):
+        """Проверка, что анонимный пользователь получает 429 после превышения лимита (100 запросов в день)"""
+        url = reverse('backend:products')
+        # Делаем 101 запрос
+        for _ in range(101):
+            response = api_client.get(url)
+        # Последний (101-й) должен вернуть 429
+        assert response.status_code == status.HTTP_429_TOO_MANY_REQUESTS
