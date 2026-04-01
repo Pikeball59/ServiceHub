@@ -7,14 +7,15 @@ from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.db import IntegrityError
 from django.db.models import Q, Sum, F
-from django.http import JsonResponse, HttpResponse
-from requests import get
+from django.http import JsonResponse
 from rest_framework.authtoken.models import Token
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 import json
 
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from backend.models import Shop, Category, ProductInfo, Order, OrderItem, \
     Contact, ConfirmEmailToken
 from backend.serializers import UserSerializer, CategorySerializer, ShopSerializer, ProductInfoSerializer, \
@@ -65,7 +66,6 @@ class ConfirmAccount(APIView):
     # Регистрация методом POST
     def post(self, request, *args, **kwargs):
 
-        # проверяет обязательные аргументы
         if {'email', 'token'}.issubset(request.data):
 
             token = ConfirmEmailToken.objects.filter(user__email=request.data['email'],
@@ -82,7 +82,7 @@ class ConfirmAccount(APIView):
 
 class AccountDetails(APIView):
     """
-    A class for managing user account details.
+    Класс для управления данными учётной записи пользователя
     """
 
     # получает данные
@@ -156,9 +156,18 @@ class ShopView(ListAPIView):
 
 class ProductInfoView(APIView):
     """
-        A class for searching products.
+        Класс для поиска товаров
     """
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter('shop_id', int, description='ID магазина'),
+            OpenApiParameter('category_id', int, description='ID категории'),
+            OpenApiParameter('search', str, description='Поиск по названию товара'),
+        ],
+        responses={200: ProductInfoSerializer(many=True)},
+        description='Получить список товаров с фильтрацией и поиском'
+    )
     def get(self, request: Request, *args, **kwargs):
         query = Q(shop__state=True)
         shop_id = request.query_params.get('shop_id')
@@ -184,7 +193,7 @@ class ProductInfoView(APIView):
 
         return Response(serializer.data)
 
-# <-- ADDED: Класс для получения детальной информации о товаре по id
+# Класс для получения детальной информации о товаре по id
 class ProductDetailView(RetrieveAPIView):
     """Получение детальной информации о товаре (ProductInfo) по id"""
     queryset = ProductInfo.objects.filter(shop__state=True).select_related(
@@ -195,10 +204,11 @@ class ProductDetailView(RetrieveAPIView):
 
 class BasketView(APIView):
     """
-    A class for managing the user's shopping basket.
+    Класс для управления корзиной пользователя
     """
 
     # получает корзину
+    @extend_schema(security=[{'tokenAuth': []}], description='Получить содержимое корзины')
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
@@ -212,6 +222,7 @@ class BasketView(APIView):
         return Response(serializer.data)
 
     # редактирует корзину
+    @extend_schema(security=[{'tokenAuth': []}], description='Добавить товары в корзину')
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
@@ -244,6 +255,7 @@ class BasketView(APIView):
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
     # удаляет товары из корзины
+    @extend_schema(security=[{'tokenAuth': []}], description='Удалить товары из корзины')
     def delete(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
@@ -269,6 +281,7 @@ class BasketView(APIView):
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
     # добавляет позиции в корзину
+    @extend_schema(security=[{'tokenAuth': []}], description='Обновить количество товаров в корзине')
     def put(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
@@ -292,7 +305,7 @@ class BasketView(APIView):
 
 class PartnerUpdate(APIView):
     """
-    A class for updating partner information.
+    Класс для обновления информации магазина (прайс-листа)
     """
 
     def post(self, request, *args, **kwargs):
@@ -317,7 +330,7 @@ class PartnerUpdate(APIView):
 
 class PartnerState(APIView):
     """
-       A class for managing partner state.
+       Класс для управления статусом магазина (приём заказов)
     """
     # получает текущий статус
     def get(self, request, *args, **kwargs):
@@ -440,8 +453,6 @@ class ContactView(APIView):
             if isinstance(request.data['id'], int) or str(request.data['id']).isdigit():
                 contact = Contact.objects.filter(id=request.data['id'], user_id=request.user.id).first()
                 if contact:
-                    # Для обновления проверяю, что если меняется тип, то переданы необходимые поля
-                    # Сериализатор с partial=True примет только переданные поля, а модель проведёт валидацию
                     serializer = ContactSerializer(contact, data=request.data, partial=True)
                     if serializer.is_valid():
                         try:
@@ -456,10 +467,10 @@ class ContactView(APIView):
 
 class OrderView(APIView):
     """
-    Класс для получения и размешения заказов пользователями
+    Класс для получения и размещения заказов пользователями
     """
-
     # получаю мои заказы
+    @extend_schema(security=[{'tokenAuth': []}], description='Получить список заказов пользователя')
     def get(self, request, *args, **kwargs):
 
         if not request.user.is_authenticated:
@@ -474,6 +485,7 @@ class OrderView(APIView):
         return Response(serializer.data)
 
     # размещаю заказ из корзины
+    @extend_schema(security=[{'tokenAuth': []}], description='Подтвердить корзину и создать заказ')
     def post(self, request, *args, **kwargs):
 
         if not request.user.is_authenticated:
@@ -502,6 +514,7 @@ class OrderView(APIView):
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
     # отмена заказа
+    @extend_schema(security=[{'tokenAuth': []}], description='Отменить заказ')
     def patch(self, request, *args, **kwargs):
         """Изменение статуса заказа (только отмена для покупателя)"""
         if not request.user.is_authenticated:
