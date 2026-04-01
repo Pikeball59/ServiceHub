@@ -1,4 +1,6 @@
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
 from django_rest_passwordreset.views import reset_password_request_token, reset_password_confirm
 from backend.views import (
     PartnerUpdate, RegisterAccount, LoginAccount, CategoryView, ShopView,
@@ -25,3 +27,6 @@ urlpatterns = [
     path('order', OrderView.as_view(), name='order'),
     path('product/<int:pk>', ProductDetailView.as_view(), name='product-detail'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

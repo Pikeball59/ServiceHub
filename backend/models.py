@@ -5,6 +5,9 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django_rest_passwordreset.tokens import get_token_generator
+import os
+from PIL import Image
+from django.conf import settings
 
 STATE_CHOICES = (
     ('basket', 'Статус корзины'),
@@ -74,8 +77,7 @@ class User(AbstractUser):
         _('active'),
         default=False,
         help_text=_(
-            'Designates whether this user should be treated as active. '
-            'Unselect this instead of deleting accounts.'
+            'Определяет, следует ли считать этого пользователя активным.'
         ),
     )
     type = models.CharField(verbose_name='Тип пользователя', choices=USER_TYPE_CHOICES, max_length=5, default='buyer')
@@ -267,7 +269,7 @@ class ConfirmEmailToken(models.Model):
         User,
         related_name='confirm_email_tokens',
         on_delete=models.CASCADE,
-        verbose_name=_("The User which is associated to this password reset token")
+        verbose_name=_("Пользователь, связанный с этим токеном подтверждения email")
     )
 
     created_at = models.DateTimeField(
@@ -288,7 +290,7 @@ class ConfirmEmailToken(models.Model):
 
     @staticmethod
     def generate_key():
-        """generates a pseudo random code using os.urandom and binascii.hexlify"""
+        """генерирует псевдослучайный код"""
         return get_token_generator().generate_token()
 
     def save(self, *args, **kwargs):
@@ -298,3 +300,23 @@ class ConfirmEmailToken(models.Model):
 
     def __str__(self):
         return "Password reset token for user {user}".format(user=self.user)
+
+class Image(models.Model):
+    """Модель для хранения изображений (товаров или аватаров)"""
+    original = models.ImageField(upload_to='images/original/')
+    thumbnail = models.ImageField(upload_to='images/thumbnails/', blank=True, null=True)
+    medium = models.ImageField(upload_to='images/medium/', blank=True, null=True)
+    large = models.ImageField(upload_to='images/large/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.original.name
+
+class ProductImage(models.Model):
+    product_info = models.ForeignKey('ProductInfo', on_delete=models.CASCADE, related_name='images')
+    image = models.ForeignKey(Image, on_delete=models.CASCADE)
+    is_main = models.BooleanField(default=False)
+
+class UserAvatar(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='avatar')
+    image = models.ForeignKey(Image, on_delete=models.CASCADE)
