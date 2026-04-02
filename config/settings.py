@@ -26,9 +26,11 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'drf_spectacular_sidecar',
     'cachalot',
+    'silk',   # добавьте
 ]
 
 MIDDLEWARE = [
+    'silk.middleware.SilkyMiddleware',   # первая
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -157,6 +159,11 @@ CACHES = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Silk profiling settings
+SILKY_AUTHENTICATION = True   # требует авторизации
+SILKY_AUTHORISATION = True    # проверка прав
+SILKY_MAX_RECORDED_REQUESTS = 10000
 
 ROLLBAR = {
     'access_token': os.getenv('ROLLBAR_ACCESS_TOKEN'),

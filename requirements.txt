@@ -33,3 +33,5 @@ rollbar~=0.16.0
 # Кеширование
 django-cachalot~=2.9.0
 django-redis~=5.4.0
+
+django-silk~=5.2.0
