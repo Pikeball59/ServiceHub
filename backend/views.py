@@ -1,5 +1,6 @@
 import logging
 
+import rollbar
 from rest_framework.request import Request
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
@@ -13,12 +14,13 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.throttling import UserRateThrottle
+from rest_framework import status
 
 import json
 
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from backend.models import Shop, Category, ProductInfo, Order, OrderItem, \
-    Contact, ConfirmEmailToken
+    Contact, ConfirmEmailToken, Image, ProductImage, UserAvatar
 from backend.serializers import UserSerializer, CategorySerializer, ShopSerializer, ProductInfoSerializer, \
     OrderItemSerializer, OrderSerializer, ContactSerializer
 from backend.signals import new_order
@@ -206,7 +208,7 @@ class BasketView(APIView):
     Класс для управления корзиной пользователя
     """
     # получает корзину
-    @extend_schema(security=[{'tokenAuth': []}], description='Получить содержимое корзины')
+    @extend_schema(auth=['tokenAuth'], description='Получить содержимое корзины')
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
@@ -220,7 +222,7 @@ class BasketView(APIView):
         return Response(serializer.data)
 
     # редактирует корзину
-    @extend_schema(security=[{'tokenAuth': []}], description='Добавить товары в корзину')
+    @extend_schema(auth=['tokenAuth'], description='Добавить товары в корзину')
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
@@ -253,7 +255,7 @@ class BasketView(APIView):
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
     # удаляет товары из корзины
-    @extend_schema(security=[{'tokenAuth': []}], description='Удалить товары из корзины')
+    @extend_schema(auth=['tokenAuth'], description='Удалить товары из корзины')
     def delete(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
@@ -279,7 +281,7 @@ class BasketView(APIView):
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
     # добавляет позиции в корзину
-    @extend_schema(security=[{'tokenAuth': []}], description='Обновить количество товаров в корзине')
+    @extend_schema(auth=['tokenAuth'], description='Обновить количество товаров в корзине')
     def put(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
@@ -465,7 +467,7 @@ class OrderView(APIView):
     Класс для получения и размещения заказов пользователями
     """
     # получаю мои заказы
-    @extend_schema(security=[{'tokenAuth': []}], description='Получить список заказов пользователя')
+    @extend_schema(auth=['tokenAuth'], description='Получить список заказов пользователя')
     def get(self, request, *args, **kwargs):
 
         if not request.user.is_authenticated:
@@ -480,7 +482,7 @@ class OrderView(APIView):
         return Response(serializer.data)
 
     # размещаю заказ из корзины
-    @extend_schema(security=[{'tokenAuth': []}], description='Подтвердить корзину и создать заказ')
+    @extend_schema(auth=['tokenAuth'], description='Подтвердить корзину и создать заказ')
     def post(self, request, *args, **kwargs):
 
         if not request.user.is_authenticated:
@@ -511,7 +513,7 @@ class OrderView(APIView):
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
     # отмена заказа
-    @extend_schema(security=[{'tokenAuth': []}], description='Отменить заказ')
+    @extend_schema(auth=['tokenAuth'], description='Отменить заказ')
     def patch(self, request, *args, **kwargs):
         """Изменение статуса заказа (только отмена для покупателя)"""
         if not request.user.is_authenticated:
@@ -531,7 +533,51 @@ class OrderView(APIView):
         if new_status == 'canceled' and order.state in ['new', 'confirmed', 'assembled']:
             order.state = 'canceled'
             order.save()
-            # Сигнал post_save отправит уведомление, поэтому явный вызов не нужен
             return JsonResponse({'Status': True})
         else:
             return JsonResponse({'Status': False, 'Errors': 'Недопустимое изменение статуса'})
+    """
+        Класс для загрузки изображений
+    """
+class AvatarUploadView(APIView):
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return Response({'error': 'Login required'}, status=status.HTTP_403_FORBIDDEN)
+        if 'image' not in request.FILES:
+            return Response({'error': 'No image provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        image = Image.objects.create(original=request.FILES['image'])
+        avatar, created = UserAvatar.objects.get_or_create(user=request.user, defaults={'image': image})
+        if not created:
+            avatar.image = image
+            avatar.save()
+        return Response({'status': 'ok', 'image_id': image.id})
+
+class ProductImageView(APIView):
+    def post(self, request, pk):
+        if not request.user.is_authenticated:
+            return Response({'error': 'Login required'}, status=status.HTTP_403_FORBIDDEN)
+        # Проверяет, что пользователь — владелец магазина этого товара
+        try:
+            product_info = ProductInfo.objects.get(id=pk, shop__user=request.user)
+        except ProductInfo.DoesNotExist:
+            return Response({'error': 'Product not found or access denied'}, status=status.HTTP_404_NOT_FOUND)
+
+        if 'image' not in request.FILES:
+            return Response({'error': 'No image provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        image = Image.objects.create(original=request.FILES['image'])
+        ProductImage.objects.create(product_info=product_info, image=image)
+        return Response({'status': 'ok', 'image_id': image.id})
+    """
+        Класс Rollbar
+    """
+class TestRollbarView(APIView):
+    def get(self, request):
+        try:
+            raise Exception("This is a test exception for Rollbar")
+        except Exception as e:
+            rollbar.report_exc_info()
+            return Response({'error': str(e), 'reported_to_rollbar': True}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+

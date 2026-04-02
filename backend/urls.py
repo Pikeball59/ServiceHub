@@ -5,7 +5,8 @@ from django_rest_passwordreset.views import reset_password_request_token, reset_
 from backend.views import (
     PartnerUpdate, RegisterAccount, LoginAccount, CategoryView, ShopView,
     ProductInfoView, BasketView, AccountDetails, ContactView, OrderView,
-    PartnerState, PartnerOrders, ConfirmAccount, ProductDetailView
+    PartnerState, PartnerOrders, ConfirmAccount, ProductDetailView,
+    TestRollbarView
 )
 
 app_name = 'backend'
@@ -26,6 +27,7 @@ urlpatterns = [
     path('basket', BasketView.as_view(), name='basket'),
     path('order', OrderView.as_view(), name='order'),
     path('product/<int:pk>', ProductDetailView.as_view(), name='product-detail'),
+    path('test-rollbar/', TestRollbarView.as_view(), name='test-rollbar'),
 ]
 
 if settings.DEBUG:
