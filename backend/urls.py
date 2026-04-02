@@ -6,7 +6,7 @@ from backend.views import (
     PartnerUpdate, RegisterAccount, LoginAccount, CategoryView, ShopView,
     ProductInfoView, BasketView, AccountDetails, ContactView, OrderView,
     PartnerState, PartnerOrders, ConfirmAccount, ProductDetailView,
-    TestRollbarView
+    TestRollbarView, GoogleAuthView, GitHubAuthView
 )
 
 app_name = 'backend'
@@ -28,6 +28,8 @@ urlpatterns = [
     path('order', OrderView.as_view(), name='order'),
     path('product/<int:pk>', ProductDetailView.as_view(), name='product-detail'),
     path('test-rollbar/', TestRollbarView.as_view(), name='test-rollbar'),
+    path('auth/google/', GoogleAuthView.as_view(), name='social-google'),
+    path('auth/github/', GitHubAuthView.as_view(), name='social-github'),
 ]
 
 if settings.DEBUG:

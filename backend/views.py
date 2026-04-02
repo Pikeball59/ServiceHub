@@ -26,6 +26,11 @@ from backend.serializers import UserSerializer, CategorySerializer, ShopSerializ
 from backend.signals import new_order
 from backend.tasks import do_import_task
 
+# Добавленные импорты для социальной авторизации
+import requests
+from allauth.socialaccount.models import SocialAccount
+from django.contrib.auth import get_user_model
+
 logger = logging.getLogger(__name__)
 
 # Добавлю кастомный throttle
@@ -536,9 +541,7 @@ class OrderView(APIView):
             return JsonResponse({'Status': True})
         else:
             return JsonResponse({'Status': False, 'Errors': 'Недопустимое изменение статуса'})
-    """
-        Класс для загрузки изображений
-    """
+
 class AvatarUploadView(APIView):
     def post(self, request):
         if not request.user.is_authenticated:
@@ -569,9 +572,7 @@ class ProductImageView(APIView):
         image = Image.objects.create(original=request.FILES['image'])
         ProductImage.objects.create(product_info=product_info, image=image)
         return Response({'status': 'ok', 'image_id': image.id})
-    """
-        Класс Rollbar
-    """
+
 class TestRollbarView(APIView):
     def get(self, request):
         try:
@@ -580,4 +581,71 @@ class TestRollbarView(APIView):
             rollbar.report_exc_info()
             return Response({'error': str(e), 'reported_to_rollbar': True}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+# ========== Социальная авторизация ==========
+User = get_user_model()
 
+class SocialAuthView(APIView):
+    provider = None
+
+    def post(self, request):
+        token = request.data.get('token')
+        if not token:
+            return Response({'error': 'Token missing'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if self.provider == 'google':
+            url = 'https://www.googleapis.com/oauth2/v3/userinfo'
+            headers = {'Authorization': f'Bearer {token}'}
+            resp = requests.get(url, headers=headers)
+            if resp.status_code != 200:
+                return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+            data = resp.json()
+            email = data.get('email')
+            first_name = data.get('given_name', '')
+            last_name = data.get('family_name', '')
+            provider_user_id = data.get('sub')
+        elif self.provider == 'github':
+            resp = requests.get('https://api.github.com/user', headers={'Authorization': f'token {token}'})
+            if resp.status_code != 200:
+                return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+            data = resp.json()
+            # Get email
+            email_resp = requests.get('https://api.github.com/user/emails', headers={'Authorization': f'token {token}'})
+            if email_resp.status_code == 200:
+                emails = email_resp.json()
+                email = next((e['email'] for e in emails if e['primary']), None)
+            else:
+                email = None
+            first_name = data.get('name', '').split()[0] if data.get('name') else ''
+            last_name = ' '.join(data.get('name', '').split()[1:]) if data.get('name') else ''
+            provider_user_id = str(data.get('id'))
+        else:
+            return Response({'error': 'Invalid provider'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not email:
+            return Response({'error': 'Email not provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user, created = User.objects.get_or_create(email=email, defaults={
+            'first_name': first_name,
+            'last_name': last_name,
+            'is_active': True,
+            'username': email.split('@')[0],
+        })
+        if created:
+            user.set_unusable_password()
+            user.save()
+
+        SocialAccount.objects.get_or_create(
+            user=user,
+            provider=self.provider,
+            uid=provider_user_id,
+            defaults={'extra_data': data}
+        )
+
+        token_obj, _ = Token.objects.get_or_create(user=user)
+        return Response({'token': token_obj.key})
+
+class GoogleAuthView(SocialAuthView):
+    provider = 'google'
+
+class GitHubAuthView(SocialAuthView):
+    provider = 'github'

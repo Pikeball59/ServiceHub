@@ -35,3 +35,6 @@ django-cachalot~=2.9.0
 django-redis~=5.4.0
 
 django-silk~=5.2.0
+
+# Социальная авторизация
+django-allauth~=0.57.0
