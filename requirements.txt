@@ -29,3 +29,7 @@ django-baton~=2.3.0
 Pillow~=10.0.0
 
 rollbar~=0.16.0
+
+# Кеширование
+django-cachalot~=2.9.0
+django-redis~=5.4.0

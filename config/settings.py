@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'backend',
     'drf_spectacular',
     'drf_spectacular_sidecar',
+    'cachalot',
 ]
 
 MIDDLEWARE = [
@@ -135,6 +136,24 @@ CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+
+# Кэширование (Redis) – используем базу 1, чтобы не конфликтовать с Celery (база 0)
+_redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+# Принудительно заменяем номер базы на 1
+if _redis_url.rstrip('/').endswith('/0'):
+    _redis_location = _redis_url.rsplit('/', 1)[0] + '/1'
+else:
+    _redis_location = _redis_url.rstrip('/') + '/1'
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': _redis_location,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
