@@ -245,9 +245,10 @@ class TestContactModel:
     """Тесты модели Contact"""
 
     def test_create_contact(self, user_buyer):
-        """Создаём контакт"""
+        """Создаём контакт (адрес)"""
         contact = Contact.objects.create(
             user=user_buyer,
+            type='address',
             city='Пермь',
             street='Монастырская',
             house='1',
@@ -257,12 +258,14 @@ class TestContactModel:
         assert contact.phone == '+79239123455'
 
     def test_contact_str(self, user_buyer):
-        """Строковое представление контакта"""
+        """Строковое представление контакта (адрес)"""
         contact = Contact.objects.create(
             user=user_buyer,
+            type='address',
             city='Пермь',
             street='Монастырская',
-            house='1'
+            house='1',
+            phone='+79239123455'
         )
         assert str(contact) == 'Пермь Монастырская 1'
 

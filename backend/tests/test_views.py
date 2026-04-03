@@ -4,9 +4,10 @@
 import json
 import pytest
 from django.urls import reverse
+from unittest.mock import patch
 from rest_framework import status
-from rest_framework.test import APIClient
-from backend.models import User, Shop, Order, Contact
+from backend.models import User, Shop
+from backend.views import ProductInfoView
 
 @pytest.mark.django_db
 class TestRegisterAccount:
@@ -170,6 +171,12 @@ class TestConfirmAccount:
 class TestProductInfoView:
     """Тесты просмотра товаров"""
 
+    @pytest.fixture(autouse=True)
+    def disable_throttling(self):
+        # Отключаем явный throttle класс во вьюхе
+        with patch.object(ProductInfoView, 'throttle_classes', []):
+            yield
+
     def test_get_products_list(self, api_client, product_info):
         """Получение списка товаров"""
         url = reverse('backend:products')
@@ -281,9 +288,10 @@ class TestContactView:
         assert len(response.json()) >= 1
 
     def test_create_contact(self, authenticated_client):
-        """Создание нового контакта"""
+        """Создание нового контакта (адрес)"""
         url = reverse('backend:user-contact')
         data = {
+            'type': 'address',
             'city': 'Санкт-Петербург',
             'street': 'Невский',
             'house': '10',
@@ -336,16 +344,12 @@ class TestOrderView:
         assert len(response.json()) >= 1
 
     def test_confirm_order(self, authenticated_client, basket, contact):
-        """Подтверждение заказа"""
+        """Подтверждение заказа (корзины)"""
         url = reverse('backend:order')
-        data = {
-            'id': basket.id,
-            'contact': contact.id
-        }
+        data = {'id': basket.id, 'contact': contact.id}
         response = authenticated_client.post(url, data, format='json')
         assert response.status_code == status.HTTP_200_OK
         assert response.json()['Status'] is True
-
         basket.refresh_from_db()
         assert basket.state == 'new'
 
@@ -359,6 +363,7 @@ class TestOrderView:
         )
         other_contact = Contact.objects.create(
             user=other_user,
+            type='address',
             city='Пермь',
             street='Монастырская',
             house='1',
@@ -506,7 +511,13 @@ class TestShopView:
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        for shop in data:
+        # В проекте настроена пагинация, поэтому данные в 'results'
+        if isinstance(data, dict) and 'results' in data:
+            results = data['results']
+        else:
+            results = data
+        assert isinstance(results, list)
+        for shop in results:
             assert shop['state'] is True
 
 @pytest.mark.django_db

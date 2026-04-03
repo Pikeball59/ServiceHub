@@ -119,9 +119,10 @@ def product_parameter(product_info, parameter):
 
 @pytest.fixture
 def contact(user_buyer):
-    """Создаём контакт пользователя"""
+    """Создаём контакт пользователя (адрес)"""
     return Contact.objects.create(
         user=user_buyer,
+        type='address',
         city='Пермь',
         street='Монастырская',
         house='1',
@@ -154,4 +155,11 @@ def basket(user_buyer):
         state='basket'
     )
 
-
+@pytest.fixture
+def phone_contact(user_buyer):
+    """Создаём телефонный контакт"""
+    return Contact.objects.create(
+        user=user_buyer,
+        type='phone',
+        phone='+79239123455'
+    )

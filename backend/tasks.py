@@ -5,6 +5,11 @@ from requests import get
 from requests.exceptions import RequestException
 import yaml
 from backend.models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter
+import os
+import logging
+from PIL import Image as PILImage
+
+logger = logging.getLogger(__name__)
 
 @shared_task
 def send_email_task(subject, message, recipient_list, html_message=None):
@@ -70,3 +75,37 @@ def do_import_task(url, user_id):
 
     except Exception as e:
         return {'status': False, 'error': str(e)}
+
+@shared_task
+def process_image(image_id):
+    from backend.models import Image as ImageModel
+    try:
+        img_obj = ImageModel.objects.get(id=image_id)
+        img = PILImage.open(img_obj.original.path)
+        # Создание миниатюры (100x100)
+        thumb = img.copy()
+        thumb.thumbnail((100, 100), PILImage.Resampling.LANCZOS)
+        thumb_path = img_obj.original.path.replace('original', 'thumbnails')
+        os.makedirs(os.path.dirname(thumb_path), exist_ok=True)
+        thumb.save(thumb_path, optimize=True, quality=85)
+        img_obj.thumbnail = thumb_path.replace(settings.MEDIA_ROOT, '')
+
+        # Средний размер (300x300)
+        medium = img.copy()
+        medium.thumbnail((300, 300), PILImage.Resampling.LANCZOS)
+        medium_path = img_obj.original.path.replace('original', 'medium')
+        medium.save(medium_path, optimize=True, quality=85)
+        img_obj.medium = medium_path.replace(settings.MEDIA_ROOT, '')
+
+        # Большой размер (800x800)
+        large = img.copy()
+        large.thumbnail((800, 800), PILImage.Resampling.LANCZOS)
+        large_path = img_obj.original.path.replace('original', 'large')
+        large.save(large_path, optimize=True, quality=85)
+        img_obj.large = large_path.replace(settings.MEDIA_ROOT, '')
+
+        img_obj.save()
+    except Exception as e:
+        logger.error(f"Error processing image {image_id}: {e}")
+
+

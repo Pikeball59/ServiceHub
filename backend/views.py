@@ -500,20 +500,18 @@ class OrderView(APIView):
                 if not Contact.objects.filter(id=contact_id, user_id=request.user.id).exists():
                     return JsonResponse({'Status': False, 'Errors': 'Контакт не найден или не принадлежит вам'})
 
-                try:
-                    is_updated = Order.objects.filter(
-                        user_id=request.user.id,
-                        id=request.data['id'],
-                        state='basket'
-                    ).update(contact_id=contact_id, state='new')
-                except IntegrityError as error:
-                    logger.error(f"Order confirmation error: {error}")
-                    return JsonResponse({'Status': False, 'Errors': 'Неправильно указаны аргументы'})
-                else:
-                    if not is_updated:
-                        return JsonResponse({'Status': False, 'Errors': 'Корзина не найдена или уже оформлена'})
-                    new_order.send(sender=self.__class__, user_id=request.user.id, order_id=request.data['id'])
-                    return JsonResponse({'Status': True})
+                # Исправление: обновляем только корзину (state='basket')
+                updated = Order.objects.filter(
+                    user_id=request.user.id,
+                    id=request.data['id'],
+                    state='basket'
+                ).update(contact_id=contact_id, state='new')
+
+                if not updated:
+                    return JsonResponse({'Status': False, 'Errors': 'Корзина не найдена или уже оформлена'})
+
+                new_order.send(sender=self.__class__, user_id=request.user.id, order_id=request.data['id'])
+                return JsonResponse({'Status': True})
 
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
@@ -581,7 +579,7 @@ class TestRollbarView(APIView):
             rollbar.report_exc_info()
             return Response({'error': str(e), 'reported_to_rollbar': True}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-# ========== Социальная авторизация ==========
+# Социальная авторизация
 User = get_user_model()
 
 class SocialAuthView(APIView):
@@ -649,3 +647,5 @@ class GoogleAuthView(SocialAuthView):
 
 class GitHubAuthView(SocialAuthView):
     provider = 'github'
+
+

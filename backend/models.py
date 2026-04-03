@@ -320,3 +320,4 @@ class ProductImage(models.Model):
 class UserAvatar(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='avatar')
     image = models.ForeignKey(Image, on_delete=models.CASCADE)
+

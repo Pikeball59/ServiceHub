@@ -4,8 +4,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver, Signal
 from django.template.loader import render_to_string
 from django_rest_passwordreset.signals import reset_password_token_created
-from backend.models import ConfirmEmailToken, User, Order
-from backend.tasks import send_email_task
+from backend.models import ConfirmEmailToken, User, Order, Image
+from backend.tasks import send_email_task, process_image
 
 new_user_registered = Signal()
 new_order = Signal()
@@ -91,5 +91,10 @@ def order_status_changed(sender, instance, created, **kwargs):
         admin_subject = f'Изменение статуса заказа №{instance.id}'
         admin_message = f'Заказ №{instance.id} изменён на статус "{status_display}".'
         send_email_task.delay(admin_subject, admin_message, [settings.ADMIN_EMAIL])
+
+@receiver(post_save, sender=Image)
+def image_post_save(sender, instance, created, **kwargs):
+    if created:
+        process_image.delay(instance.id)
 
 

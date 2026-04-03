@@ -5,7 +5,6 @@ import pytest
 from unittest.mock import patch, MagicMock
 from django.contrib.auth import get_user_model
 from backend.tasks import send_email_task, do_import_task
-from backend.models import User, Shop, Product, ProductInfo, Category
 
 User = get_user_model()
 
@@ -85,3 +84,4 @@ class TestDoImportTask:
         result = do_import_task('https://example.com/shop.yaml', user_shop.id)
 
         assert result['status'] is False
+

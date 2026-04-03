@@ -13,3 +13,4 @@ urlpatterns = [
     path('user/avatar/', AvatarUploadView.as_view(), name='avatar-upload'),
     path('product/<int:pk>/image/', ProductImageView.as_view(), name='product-image'),
 ]
+
