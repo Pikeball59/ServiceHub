@@ -18,7 +18,7 @@ class TestUserModel:
     """Тесты модели User"""
 
     def test_create_user(self):
-        """Создаём обычного пользователя"""
+        """Создаю обычного пользователя"""
         user = User.objects.create_user(
             email='test@test.com',
             password='TestPass123!',
@@ -32,7 +32,7 @@ class TestUserModel:
         assert user.is_superuser is False
 
     def test_create_superuser(self):
-        """Создаём суперпользователя"""
+        """Создаю суперпользователя"""
         user = User.objects.create_superuser(
             email='admin@test.com',
             password='AdminPass123!'
@@ -54,7 +54,7 @@ class TestUserModel:
             )
 
     def test_user_without_email(self):
-        """Создаём пользователя без email, должно вызвать ошибку"""
+        """Создаю пользователя без email, должно вызвать ошибку"""
         with pytest.raises(ValueError):
             User.objects.create_user(
                 email='',
@@ -62,7 +62,7 @@ class TestUserModel:
             )
 
     def test_user_str(self):
-        """Проверяем строкового представления"""
+        """Проверяю строкового представления"""
         user = User.objects.create_user(
             email='str@test.com',
             password='TestPass123!',
@@ -72,7 +72,7 @@ class TestUserModel:
         assert str(user) == 'Иван Иванов'
 
     def test_user_type_choices(self):
-        """Проверяем типы пользователей"""
+        """Проверяю типы пользователей"""
         assert ('shop', 'Магазин') in USER_TYPE_CHOICES
         assert ('buyer', 'Покупатель') in USER_TYPE_CHOICES
 
@@ -82,7 +82,7 @@ class TestShopModel:
     """Тесты модели Shop"""
 
     def test_create_shop(self, user_shop):
-        """Создаём магазин"""
+        """Создаю магазин"""
         shop = Shop.objects.create(
             name='Тестовый магазин',
             user=user_shop,
@@ -112,7 +112,7 @@ class TestCategoryModel:
     """Тесты модели Category"""
 
     def test_create_category(self):
-        """Создаём категории"""
+        """Создаю категории"""
         category = Category.objects.create(name='Электроника')
         assert category.name == 'Электроника'
 
@@ -132,7 +132,7 @@ class TestProductModel:
     """Тесты модели Product"""
 
     def test_create_product(self, category):
-        """Создаем товар"""
+        """Создаю товар"""
         product = Product.objects.create(
             name='iPhone 15',
             category=category
@@ -153,7 +153,7 @@ class TestProductInfoModel:
     """Тесты модели ProductInfo"""
 
     def test_create_product_info(self, product, shop):
-        """Создаём информацию о товаре"""
+        """Создаю информацию о товаре"""
         product_info = ProductInfo.objects.create(
             product=product,
             shop=shop,
@@ -204,7 +204,7 @@ class TestParameterModel:
     """Тесты модели Parameter"""
 
     def test_create_parameter(self):
-        """Создаём параметр"""
+        """Создаю параметр"""
         parameter = Parameter.objects.create(name='Цвет')
         assert parameter.name == 'Цвет'
 
@@ -218,7 +218,7 @@ class TestProductParameterModel:
     """Тесты модели ProductParameter"""
 
     def test_create_product_parameter(self, product_info, parameter):
-        """Создаём параметр товара"""
+        """Создаю параметр товара"""
         pp = ProductParameter.objects.create(
             product_info=product_info,
             parameter=parameter,
@@ -245,7 +245,7 @@ class TestContactModel:
     """Тесты модели Contact"""
 
     def test_create_contact(self, user_buyer):
-        """Создаём контакт (адрес)"""
+        """Создаю контакт (адрес)"""
         contact = Contact.objects.create(
             user=user_buyer,
             type='address',
@@ -274,7 +274,7 @@ class TestOrderModel:
     """Тесты модели Order"""
 
     def test_create_order(self, user_buyer, contact):
-        """Создаём заказ"""
+        """Создаю заказ"""
         order = Order.objects.create(
             user=user_buyer,
             state='new',
@@ -307,7 +307,7 @@ class TestOrderItemModel:
     """Тесты модели OrderItem"""
 
     def test_create_order_item(self, order, product_info):
-        """Создаём позиции заказа"""
+        """Создаю позиции заказа"""
         item = OrderItem.objects.create(
             order=order,
             product_info=product_info,
@@ -335,7 +335,7 @@ class TestConfirmEmailTokenModel:
     """Тесты модели ConfirmEmailToken"""
 
     def test_create_token(self, user_buyer):
-        """Создаём токен подтверждения"""
+        """Создаю токен подтверждения"""
         token = ConfirmEmailToken.objects.create(user=user_buyer)
         assert token.key is not None
         assert len(token.key) > 0

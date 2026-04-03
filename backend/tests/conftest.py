@@ -16,12 +16,12 @@ User = get_user_model()
 
 @pytest.fixture
 def api_client():
-    """Создаём API клиент"""
+    """Создаю API клиент"""
     return APIClient()
 
 @pytest.fixture
 def user_buyer():
-    """Создаём пользователя-покупателя"""
+    """Создаю пользователя-покупателя"""
     return User.objects.create_user(
         email='buyer@test.com',
         password='TestPassword123!',
@@ -33,7 +33,7 @@ def user_buyer():
 
 @pytest.fixture
 def user_shop():
-    """Создаём пользователя-магазин"""
+    """Создаю пользователя-магазин"""
     return User.objects.create_user(
         email='shop@test.com',
         password='TestPassword123!',
@@ -45,7 +45,7 @@ def user_shop():
 
 @pytest.fixture
 def user_admin():
-    """Создаём суперпользователя"""
+    """Создаю суперпользователя"""
     return User.objects.create_superuser(
         email='admin@test.com',
         password='AdminPassword123!',
@@ -57,19 +57,19 @@ def user_admin():
 
 @pytest.fixture
 def auth_token(user_buyer):
-    """Создаём токен для пользователя"""
+    """Создаю токен для пользователя"""
     token, _ = Token.objects.get_or_create(user=user_buyer)
     return token.key
 
 @pytest.fixture
 def authenticated_client(api_client, auth_token):
-    """Создаём авторизованный API клиент"""
+    """Создаю авторизованный API клиент"""
     api_client.credentials(HTTP_AUTHORIZATION=f'Token {auth_token}')
     return api_client
 
 @pytest.fixture
 def shop(user_shop):
-    """Создаём магазин"""
+    """Создаю магазин"""
     return Shop.objects.create(
         name='Тестовый магазин',
         url='https://example.com/shop.yaml',
@@ -79,12 +79,12 @@ def shop(user_shop):
 
 @pytest.fixture
 def category():
-    """Создаём категорию"""
+    """Создаю категорию"""
     return Category.objects.create(name='Смартфоны')
 
 @pytest.fixture
 def product(category):
-    """Создаём товар"""
+    """Создаю товар"""
     return Product.objects.create(
         name='iPhone 15',
         category=category
@@ -92,7 +92,7 @@ def product(category):
 
 @pytest.fixture
 def product_info(product, shop):
-    """Создаём информацию о товаре"""
+    """Создаю информацию о товаре"""
     return ProductInfo.objects.create(
         product=product,
         shop=shop,
@@ -105,12 +105,12 @@ def product_info(product, shop):
 
 @pytest.fixture
 def parameter():
-    """Создаём параметр"""
+    """Создаю параметр"""
     return Parameter.objects.create(name='Цвет')
 
 @pytest.fixture
 def product_parameter(product_info, parameter):
-    """Создаём параметр товара"""
+    """Создаю параметр товара"""
     return ProductParameter.objects.create(
         product_info=product_info,
         parameter=parameter,
@@ -119,7 +119,7 @@ def product_parameter(product_info, parameter):
 
 @pytest.fixture
 def contact(user_buyer):
-    """Создаём контакт пользователя (адрес)"""
+    """Создаю контакт пользователя (адрес)"""
     return Contact.objects.create(
         user=user_buyer,
         type='address',
@@ -131,7 +131,7 @@ def contact(user_buyer):
 
 @pytest.fixture
 def order(user_buyer, contact):
-    """Создаём заказ"""
+    """Создаю заказ"""
     return Order.objects.create(
         user=user_buyer,
         state='new',
@@ -140,7 +140,7 @@ def order(user_buyer, contact):
 
 @pytest.fixture
 def order_item(order, product_info):
-    """Создаём позицию заказа"""
+    """Создаю позицию заказа"""
     return OrderItem.objects.create(
         order=order,
         product_info=product_info,
@@ -149,7 +149,7 @@ def order_item(order, product_info):
 
 @pytest.fixture
 def basket(user_buyer):
-    """Создаём корзину"""
+    """Создаю корзину"""
     return Order.objects.create(
         user=user_buyer,
         state='basket'
@@ -157,7 +157,7 @@ def basket(user_buyer):
 
 @pytest.fixture
 def phone_contact(user_buyer):
-    """Создаём телефонный контакт"""
+    """Создаю телефонный контакт"""
     return Contact.objects.create(
         user=user_buyer,
         type='phone',

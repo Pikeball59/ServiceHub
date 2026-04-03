@@ -12,7 +12,7 @@ new_order = Signal()
 
 @receiver(reset_password_token_created)
 def password_reset_token_created(sender, instance, reset_password_token, **kwargs):
-    """Отправляем письмо с токеном для сброса пароля"""
+    """Отправляет письмо с токеном для сброса пароля"""
     send_email_task.delay(
         f"Password Reset Token for {reset_password_token.user}",
         reset_password_token.key,
@@ -21,7 +21,7 @@ def password_reset_token_created(sender, instance, reset_password_token, **kwarg
 
 @receiver(post_save, sender=User)
 def new_user_registered_signal(sender: Type[User], instance: User, created: bool, **kwargs):
-    """Отправляем письмо с подтверждением почты"""
+    """Отправляет письмо с подтверждением почты"""
     if created and not instance.is_active:
         token, _ = ConfirmEmailToken.objects.get_or_create(user_id=instance.pk)
         send_email_task.delay(
@@ -32,7 +32,7 @@ def new_user_registered_signal(sender: Type[User], instance: User, created: bool
 
 @receiver(new_order)
 def new_order_signal(sender, user_id, order_id, **kwargs):
-    """Отправляем письма при создании заказа: покупателю и администратору"""
+    """Отправляет письма при создании заказа: покупателю и администратору"""
     try:
         order = Order.objects.select_related('user', 'contact').prefetch_related(
             'ordered_items__product_info__product'
@@ -40,7 +40,7 @@ def new_order_signal(sender, user_id, order_id, **kwargs):
     except Order.DoesNotExist:
         return
 
-    # Формируем накладную
+    # Формирую накладную
     items = []
     for item in order.ordered_items.all():
         items.append({
@@ -79,7 +79,7 @@ def new_order_signal(sender, user_id, order_id, **kwargs):
 
 @receiver(post_save, sender=Order)
 def order_status_changed(sender, instance, created, **kwargs):
-    """Отправляем письма при изменении статуса заказа (не при создании)"""
+    """Отправляет письма при изменении статуса заказа (не при создании)"""
     if not created and instance.state != 'basket':
         status_display = instance.get_state_display()
         # Письмо покупателю об изменении статуса

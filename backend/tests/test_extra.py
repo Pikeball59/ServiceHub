@@ -2,7 +2,6 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from unittest.mock import patch, MagicMock
-
 from backend.models import (
     User, Shop, Category, Product, ProductInfo, Contact,
     Image,
@@ -61,7 +60,7 @@ class TestOrderViewPostFix:
         assert response2.json()['Status'] is False
         assert 'Корзина не найдена или уже оформлена' in response2.json()['Errors']
 
-# Тесты для ограничений Contact (в модели)
+# Тесты для ограничений Contact
 @pytest.mark.django_db
 class TestContactConstraints:
     def test_only_one_phone_per_user(self, user_buyer):
@@ -120,7 +119,7 @@ class TestSignals:
         order.state = 'confirmed'
         order.save()
         assert mock_send_email.call_count == 2
-        # Проверяем, что тема первого письма содержит правильный текст
+        # Проверяю, что тема первого письма содержит правильный текст
         args, _ = mock_send_email.call_args_list[0]
         assert 'Изменение статуса заказа' in args[0] or 'Статус заказа' in args[0]
 
@@ -168,7 +167,6 @@ class TestDoImportTask:
         mock_get.side_effect = Exception('Connection error')
         result = do_import_task('http://bad.url', user_shop.id)
         assert result['status'] is False
-        # Исправлено: проверяем статус и наличие ошибки
         assert 'error' in result
 
 # Тесты для обработки изображений
@@ -179,14 +177,14 @@ class TestImageProcessing:
         from django.core.files.base import ContentFile
         import os
 
-        # Временно меняем MEDIA_ROOT на временную папку
+        # Временно меняю MEDIA_ROOT на временную папку
         settings.MEDIA_ROOT = str(tmpdir)
-        # Создаём структуру папок
+        # Создаю структуру папок
         os.makedirs(os.path.join(settings.MEDIA_ROOT, 'images', 'original'), exist_ok=True)
 
         img = Image.objects.create(original=ContentFile(b'fake', name='test.jpg'))
 
-        # Мокаем PIL
+        # Мокаю PIL
         mock_img = MagicMock()
         mock_pil_open.return_value = mock_img
         mock_img.copy.return_value = mock_img

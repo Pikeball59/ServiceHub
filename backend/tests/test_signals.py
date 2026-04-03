@@ -37,7 +37,7 @@ class TestOrderSignals:
         """Сигнал при создании нового заказа"""
         from backend.signals import new_order
 
-        # Создаём позицию в корзине
+        # Создет позицию в корзине
         from backend.models import OrderItem
         OrderItem.objects.create(
             order=basket,
@@ -45,7 +45,7 @@ class TestOrderSignals:
             quantity=2
         )
 
-        # Отправляет сигнал
+        # Отправляем сигнал
         new_order.send(sender=None, user_id=user_buyer.id, order_id=basket.id)
 
         # Email задачи должны быть вызваны (покупателю и администратору)

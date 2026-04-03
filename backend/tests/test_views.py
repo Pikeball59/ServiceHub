@@ -173,7 +173,7 @@ class TestProductInfoView:
 
     @pytest.fixture(autouse=True)
     def disable_throttling(self):
-        # Отключаем явный throttle класс во вьюхе
+        # Отключу пока явный throttle класс во вьюхе
         with patch.object(ProductInfoView, 'throttle_classes', []):
             yield
 
@@ -480,7 +480,6 @@ class TestCategoryView:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) >= 1
 
-
 @pytest.mark.django_db
 class TestShopView:
     """Тесты магазинов"""
@@ -574,7 +573,7 @@ class TestThrottling:
     def test_anon_throttle(self, api_client):
         """Проверка, что анонимный пользователь получает 429 после превышения лимита (100 запросов в день)"""
         url = reverse('backend:products')
-        # Делаем 101 запрос
+        # Делает 101 запрос
         for _ in range(101):
             response = api_client.get(url)
         # Последний (101-й) должен вернуть 429

@@ -9,8 +9,7 @@ from backend.serializers import (
     ShopSerializer, ProductInfoSerializer, OrderSerializer,
     OrderItemSerializer
 )
-from backend.models import User, Contact, Category, Shop, Product, ProductInfo, Order
-
+from backend.models import Contact
 User = get_user_model()
 
 @pytest.mark.django_db
@@ -25,7 +24,7 @@ class TestUserSerializer:
         assert 'last_name' in serializer.data
 
     def test_user_serializer_create(self):
-        """Создаём пользователя через сериализатор"""
+        """Создаю пользователя через сериализатор"""
         data = {
             'email': 'new@test.com',
             'first_name': 'Тест',
@@ -68,12 +67,11 @@ class TestContactSerializer:
         assert 'type' in serializer.data
         assert serializer.data['type'] == 'phone'
         assert 'phone' in serializer.data
-        # поля адреса должны быть пустыми
         assert serializer.data['city'] == ''
         assert serializer.data['street'] == ''
 
     def test_contact_serializer_create_address(self, user_buyer):
-        """Создаём адрес через сериализатор"""
+        """Создаю адрес через сериализатор"""
         data = {
             'user': user_buyer.id,
             'type': 'address',
@@ -89,7 +87,7 @@ class TestContactSerializer:
         assert contact.city == 'Пермь'
 
     def test_contact_serializer_create_phone(self, user_buyer):
-        """Создаём телефон через сериализатор"""
+        """Создаю телефон через сериализатор"""
         data = {
             'user': user_buyer.id,
             'type': 'phone',
@@ -100,9 +98,6 @@ class TestContactSerializer:
         contact = serializer.save()
         assert contact.type == 'phone'
         assert contact.phone == '+79239123455'
-
-    # Тест удалён, так как валидация обязательных полей перенесена в модель Contact.
-    # Сериализатор допускает пустые поля, ошибки возникают только при вызове save().
 
     def test_contact_serializer_invalid_type(self, user_buyer):
         """Неверный тип контакта"""

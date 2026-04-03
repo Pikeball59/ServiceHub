@@ -8,6 +8,8 @@ __pycache__/
 dist/
 build/
 .eggs/
+*.pot
+*.pid
 
 # Virtual environment
 .venv/
@@ -22,15 +24,22 @@ ENV/
 # Database
 *.sqlite3
 *.db
+*.db-journal
+*.wal
 
 # Logs
 *.log
+celery.log
+django.log
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
+\#*#
+.#*
 .DS_Store
 
 # Testing / coverage
@@ -40,8 +49,7 @@ htmlcov/
 .pytest_cache/
 *.cover
 
-# Django (keep migrations, ignore compiled files)
-# Migrations are important, only ignore __pycache__ inside them
+# Django (keep migrations, ignore only __pycache__)
 */migrations/__pycache__/
 
 # Celery
@@ -55,11 +63,17 @@ celerybeat.pid
 # Project specific
 settings_local.py
 
-# Static and media files (if collected)
+# Static and media files
 staticfiles/
 media/
 
-# Misc
+# Temporary files
+*.tmp
+*.bak
+avatar.jpg
+register.json
+
+# Miscellaneous
 *.pyc
 *.pyo
 *.pyd

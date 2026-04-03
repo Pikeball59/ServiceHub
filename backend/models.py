@@ -5,8 +5,6 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django_rest_passwordreset.tokens import get_token_generator
-import os
-from PIL import Image
 from django.conf import settings
 
 STATE_CHOICES = (
